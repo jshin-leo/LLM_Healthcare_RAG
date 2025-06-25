@@ -1,0 +1,9 @@
+transformers>=4.39.0
+sentence-transformers>=2.2.2
+faiss-cpu
+torch>=2.0.0
+spacy>=3.0.0
+nltk
+yt-dlp
+beautifulsoup4
+requests
