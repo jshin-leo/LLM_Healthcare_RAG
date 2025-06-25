@@ -4,10 +4,7 @@
 #   - Title: main.py
 #   - Author: Jihoon Shin
 #   - Date: June 6th, 2025
-#   - Purpose: Full RAG pipeline – crawl, extract, and chunk data
-'''
-    
-'''
+#   - Purpose: Full RAG pipeline 
 # ---------------------------------------------------------------------
 import os
 # Silence tensorflow logs
