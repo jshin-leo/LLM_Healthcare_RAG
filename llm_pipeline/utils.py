@@ -56,7 +56,7 @@ WHISPER_MODEL = "base"
 
 # ---------------------------------------------------------------------
 # --- LLM settings ---
-MODEL_PATH = "PLEASE_USE_YOUR_PATH"
+MODEL_PATH = "/home/jshin4/mistral_model"
 DEVICE = "cuda:1" if torch.cuda.is_available() else "cpu"
 
 def load_mistral_model():
@@ -99,6 +99,7 @@ def fully_normalize_text(text):
     
     return text
 
+# locally deduplicate
 def deduplicate_within_chunk(chunk):
     lines = chunk.split('\n')
     seen = set()
@@ -109,6 +110,22 @@ def deduplicate_within_chunk(chunk):
             seen.add(norm)
             deduped.append(line.strip())
     return '\n'.join(deduped).strip()
+
+
+def global_deduplicate_chunks(chunks, seen_chunks_global):
+    """
+    Remove globally duplicate chunks using fully normalized text.
+    Only original (non-normalized) chunks are returned.
+    """
+    normalized_map = {fully_normalize_text(c): c for c in chunks}
+
+    final_chunks = []
+    for norm_text, original_chunk in normalized_map.items():
+        if norm_text not in seen_chunks_global:
+            seen_chunks_global.add(norm_text)
+            final_chunks.append(original_chunk)
+    return final_chunks
+
 
 def extract_url_content(text):
     lines = text.strip().splitlines()
