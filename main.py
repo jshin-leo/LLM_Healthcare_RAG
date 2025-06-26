@@ -1,13 +1,26 @@
 # ---------------------------------------------------------------------
-#   Project: LLM for HealthCare
+#   Project: LLM for HealthCare 
 #
 #   - Title: main.py
 #   - Author: Jihoon Shin
+#   - GitHub: https://github.com/jshin-leo/LLM_Healthcare_RAG
 #   - Date: June 6th, 2025
 #   - Purpose: Full RAG pipeline 
-'''
-    
-'''
+#   
+#   - Description:
+#       This script serves as the main entry point for the "LLM for Healthcare" project,
+#       which builds a local Retrieval-Augmented Generation (RAG) system focused on 
+#       Alzheimer’s disease, related dementias (ADRD), and caregiving.
+#
+#       The pipeline supports:
+#       - Crawling YouTube 
+#       - Transcribing and chunking textual content
+#       - Building a FAISS vector store for semantic search
+#       - Performing question answering via a local LLM (Mistral 7B)
+#       - Fine tuning Mistral 7B with Q&A datasets [In Progress] 
+#
+#   Usage:
+#     Run individual stages (e.g., youtube, website, index) or the full RAG pipeline.
 # ---------------------------------------------------------------------
 import os
 # Silence tensorflow logs
@@ -17,22 +30,22 @@ import sys
 import argparse
 import llm_pipeline.utils as utils
 
-# === Website and YouTube Processing ===
+# ===== Website and YouTube Processing =====
 from llm_pipeline import youtube_scraper
 from llm_pipeline import chunker_youtube
 from llm_pipeline import chunker_website
 
-# === FAISS Vector Store Builder ===
+# ===== FAISS Vector Store Builder =====
 from llm_pipeline.vector_store_builder import build_vector_store
 
-# === FAISS Vector Retriever ===
+# ===== FAISS Vector Retriever =====
 from llm_pipeline.retriever import retrieve, interactive_cli
 
-# === RAG with local LLM ===
+# ===== RAG with local LLM =====
 from llm_pipeline.rag_pipeline import run_rag_pipeline
 
 # ---------------------------------------------------------------------
-# === SETTINGS ===
+# ===== SETTINGS =====
 # Folders from utils.py
 WEBSITES_FOLDER = utils.WEBSITES_FOLDER
 YOUTUBE_OUTPUT_DIR = utils.YOUTUBE_OUTPUT_DIR
@@ -66,8 +79,10 @@ def run_youtube_pipeline(do_crawl):
     print(f"Found {len(youtube_links)} YouTube link(s) to process.")
     
     seen_chunks_global = set()  # shared (for global deduplication)
-
+    count = 0   
     for link in youtube_links:
+        count += 1
+        print(f"----- [{count}/{len(youtube_links)}] Processing: {link} ")
         chunker_youtube.process_youtube_video(
             link,
             output_dir=YOUTUBE_OUTPUT_DIR,
@@ -75,7 +90,7 @@ def run_youtube_pipeline(do_crawl):
             seen_chunks_global=seen_chunks_global
         )
 
-# === YouTube: Extract links from playlists + Chunking Process ===
+# ===== YouTube: Extract links from playlists + Chunking Process =====
 def run_youtube_playlist():
     print("\n--- Running YouTube Playlist Pipeline ---")
 
@@ -88,8 +103,10 @@ def run_youtube_playlist():
     print(f"Found {len(youtube_links)} YouTube link(s) to process.")
 
     seen_chunks_global = set()  # shared (for global deduplication)
-
+    count = 0   
     for link in youtube_links:
+        count += 1
+        print(f"----- [{count}/{len(youtube_links)}] Processing: {link} ")
         chunker_youtube.process_youtube_video(
             link,
             output_dir=YOUTUBE_OUTPUT_DIR,
@@ -97,7 +114,7 @@ def run_youtube_playlist():
             seen_chunks_global=seen_chunks_global
         )
 
-# === Website: Chunking Processing ===
+# ===== Website: Chunking Processing =====
 def run_website_pipeline():
     print("\n--- Running Website Pipeline ---")
 
@@ -112,7 +129,7 @@ def run_website_pipeline():
                 seen_chunks_global=seen_chunks_global
             )
 
-# === Retriever top k ===
+# ===== Retriever top k =====
 def run_retrieve_pipeline(args):
     print(f"\nQuery: \"{args.query}\"")
     results = retrieve(
@@ -135,17 +152,17 @@ def print_usage():
     print("  python main.py rag --query 'your question' [--top_k N] [--max_tokens N]  # Full RAG pipeline with Mistral")
 
 
-# === MAIN ENTRY ===
+# ===== MAIN ENTRY =====
 if __name__ == "__main__":
     print("===== LLM for Healthcare Pipeline =====")
     
     if len(sys.argv) > 1:
         if sys.argv[1] == "youtube":    # Run YouTube pipeline
             if len(sys.argv) > 2:
-                if sys.argv[2].lower() == 'playlist':
+                if sys.argv[2].lower() == 'playlist':   # If you are using manually selected YouTube Playlists.
                     run_youtube_playlist()
                 else: 
-                    if sys.argv[2].lower() == 'y':
+                    if sys.argv[2].lower() == 'y':  # If crawling needed.
                         do_crawl = True
                     else:
                         do_crawl = False
