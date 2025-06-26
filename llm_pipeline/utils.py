@@ -37,8 +37,15 @@ os.makedirs(YOUTUBE_OUTPUT_DIR, exist_ok=True)
 os.makedirs(CHUNKS_DIR, exist_ok=True)
 os.makedirs(VECTOR_DIR, exist_ok=True)
 
-# Files
+# ===== Files =====
+# YouTube links from crawler
 YOUTUBE_LINKS_FILE = os.path.join(DATA_DIR, "youtube_links.txt")
+
+# YouTube links extracted from playlists 
+YOUTUBE_LINKS_EXTRACTED_FROM_PLAYLIST = os.path.join(DATA_DIR, "youtube_links_pl.txt")
+# YouTube Playlists (manually selected)
+YOUTUBE_PLAYLIST = os.path.join(DATA_DIR, "youtube_playlist.txt")
+
 COMBINED_YOUTUBE_OUTPUT_FILE = os.path.join(CHUNKS_DIR, "combined_youtube_rag.jsonl")
 COMBINED_WEBSITE_OUTPUT_FILE = os.path.join(CHUNKS_DIR, "combined_website_rag.jsonl")
 
