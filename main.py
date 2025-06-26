@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------
-#   Project: LLM for HealthCare 
+#   Project: Domain-Aware Question Answering for Alzheimer’s Care using RAG and Fine-Tuned Mistral 7B
 #
 #   - Title: main.py
 #   - Author: Jihoon Shin
@@ -13,14 +13,14 @@
 #       Alzheimer’s disease, related dementias (ADRD), and caregiving.
 #
 #       The pipeline supports:
-#       - Crawling YouTube 
+#       - Crawling YouTube and web resources
 #       - Transcribing and chunking textual content
 #       - Building a FAISS vector store for semantic search
 #       - Performing question answering via a local LLM (Mistral 7B)
 #       - Fine tuning Mistral 7B with Q&A datasets [In Progress] 
 #
-#   Usage:
-#     Run individual stages (e.g., youtube, website, index) or the full RAG pipeline.
+#   - Usage:
+#       Run individual stages (e.g., youtube, website, index) or the full RAG pipeline.
 # ---------------------------------------------------------------------
 import os
 # Silence tensorflow logs
@@ -62,7 +62,7 @@ METADATA_FILE = utils.METADATA_FILE
 
 # ---------------------------------------------------------------------
 
-# === YouTube: Crawl + Chunking Process ===
+# ===== YouTube: Crawl + Chunking Process =====
 def run_youtube_pipeline(do_crawl):
     print("\n--- Running YouTube Pipeline ---")
 
