@@ -59,24 +59,30 @@ def run_youtube_pipeline(do_crawl):
         youtube_links = [line.strip() for line in f if line.strip()]
 
     print(f"Found {len(youtube_links)} YouTube link(s) to process.")
+    
+    seen_chunks_global = set()  # shared (for global deduplication)
 
     for link in youtube_links:
         chunker_youtube.process_youtube_video(
             link,
             output_dir=YOUTUBE_OUTPUT_DIR,
-            shared_output_path=COMBINED_YOUTUBE_OUTPUT_FILE
+            shared_output_path=COMBINED_YOUTUBE_OUTPUT_FILE,
+            seen_chunks_global=seen_chunks_global
         )
 
 # === Website: Chunking Processing ===
 def run_website_pipeline():
     print("\n--- Running Website Pipeline ---")
 
+    seen_chunks_global = set()  # shared (for global deduplication)
+
     for filename in os.listdir(WEBSITES_FOLDER):
         if filename.endswith(".txt"):
             filepath = os.path.join(WEBSITES_FOLDER, filename)
             chunker_website.process_content_file(
                 filepath,
-                combined_output=COMBINED_WEBSITE_OUTPUT_FILE
+                combined_output=COMBINED_WEBSITE_OUTPUT_FILE,
+                seen_chunks_global=seen_chunks_global
             )
 
 # === Retriever top k ===
