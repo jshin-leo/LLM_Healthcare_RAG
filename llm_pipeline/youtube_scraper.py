@@ -10,10 +10,13 @@
 #       2. This script crawls internal links and gathers YouTube URLs.
 #       3. Saves results to youtube_links.txt
 # ---------------------------------------------------------------------
-
+import subprocess
+import json
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+import llm_pipeline.utils as utils
+
 
 def is_allowed_path(link, allowed_prefix):
     parsed = urlparse(link)
@@ -39,6 +42,15 @@ def extract_youtube_links(soup):
         if "youtube.com/embed/" in iframe["src"] or "youtube.com/watch" in iframe["src"]:
             links.add(iframe["src"])
     return links
+
+
+def save_links_to_file(links, output_file, overwrite=True):
+    mode = "w" if overwrite else "a"
+    with open(output_file, mode, encoding="utf-8") as f:
+        for link in sorted(links):
+            f.write(link + "\n")
+    print(f"Saved {len(links)} YouTube links to '{output_file}'")
+
 
 def crawl_youtube_links_and_save(targets, output_file, max_pages=10000, verbose=True):
     """
@@ -89,9 +101,8 @@ def crawl_youtube_links_and_save(targets, output_file, max_pages=10000, verbose=
                 new_links = found_links - discovered_links
                 if new_links:
                     discovered_links.update(new_links)
-                    with open(output_file, "a", encoding="utf-8") as f:
-                        for link in sorted(new_links):
-                            f.write(link + "\n")
+                    save_links_to_file(new_links, output_file, overwrite=False)
+                    
                     if verbose:
                         print(f"[{page_count}] Added {len(new_links)} new link(s) from {current_url}")
 
@@ -102,71 +113,43 @@ def crawl_youtube_links_and_save(targets, output_file, max_pages=10000, verbose=
                 if verbose:
                     print(f"[ERROR] Skipping {current_url}: {e}")
 
-# previous code for crawl.
-def crawl_youtube_links(targets, max_pages=10000, verbose=True):
-    """
-    Crawl provided websites to extract YouTube links.
+# To extract youtube links from Playlists. 
+def extract_playlist_links(input_file, output_file):
+    new_links = set()  # Use a set to prevent duplicates
 
-    Args:
-        targets (list): List of (start_url, allowed_path_prefix)
-        max_pages (int): Maximum number of pages to crawl
-        verbose (bool): Whether to print crawl progress
+    with open(input_file, "r", encoding="utf-8") as f:
+        playlist_urls = [line.strip() for line in f if line.strip()]
 
-    Returns:
-        set: Unique YouTube links found
-    """
-    visited_urls = set()
-    youtube_links = set()
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/122.0.0.0 Safari/537.36"
-        ),
-        "Accept-Language": "en-US,en;q=0.9"
-    }
-
-    for start_url, allowed_prefix in targets:
-        queue = [start_url]
-        page_count = 0
-
-        if verbose:
-            print(f"\nStarting crawl from: {start_url} (Allowed path: {allowed_prefix})")
-
-        while queue and page_count < max_pages:
-            current_url = queue.pop(0)
-            if current_url in visited_urls:
-                continue
-
-            visited_urls.add(current_url)
-            page_count += 1
-
-            try:
-                response = requests.get(current_url, timeout=10, headers=headers)
-                response.raise_for_status()
-                soup = BeautifulSoup(response.text, "html.parser")
-
-                # Extract YouTube links
-                found_links = extract_youtube_links(soup)
-                if found_links:
-                    youtube_links.update(found_links)
-                    if verbose:
-                        print(f"[{page_count}] Found {len(found_links)} YouTube link(s) at: {current_url}")
-
-                # Queue internal links
-                new_links = extract_internal_links(soup, current_url, allowed_prefix)
-                for link in new_links:
-                    if link not in visited_urls:
-                        queue.append(link)
-
-            except Exception as e:
-                if verbose:
-                    print(f"[ERROR] Skipping {current_url}: {e}")
-
-    return youtube_links
-
-def save_links_to_file(links, output_file):
+    # Make sure file is clean or created
     with open(output_file, "w", encoding="utf-8") as f:
-        for link in sorted(links):
-            f.write(link + "\n")
-    print(f"Saved {len(links)} YouTube links to '{output_file}'")
+        f.write("")
+
+    for playlist_url in playlist_urls:
+        print(f"Processing playlist: {playlist_url}")
+        command = [
+            "yt-dlp",
+            "--flat-playlist",
+            "--dump-json",
+            playlist_url
+        ]
+
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            for line in result.stdout.strip().split('\n'):
+                try:
+                    video_info = json.loads(line)
+                    video_id = video_info.get("id")
+                    if video_id:
+                        new_links.add(f"https://www.youtube.com/watch?v={video_id}")
+
+                except Exception as e:
+                    print(f"[ERROR] Could not parse line: {e}")
+
+        except subprocess.CalledProcessError as e:
+            print(f"[ERROR] yt-dlp failed on {playlist_url}: {e}")
+
+    # Save all collected unique links to the output file
+    save_links_to_file(new_links, output_file, overwrite=True)
+    
+    print(f"\nExtracted {len(new_links)} video links to '{output_file}'")
+    
