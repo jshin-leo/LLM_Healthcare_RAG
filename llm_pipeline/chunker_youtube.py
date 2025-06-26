@@ -229,7 +229,8 @@ def append_chunks_to_shared_jsonl(chunks, title, url, output_file, tags=None, de
             out_f.write(json.dumps(record) + "\n")
 
 # === Main Callable Pipeline ===
-def process_youtube_video(video_url, output_dir="/data/transcript", min_chars=100, max_chars=200, shared_output_path="combined_youtube_rag.jsonl"):
+def process_youtube_video(video_url, output_dir="/data/transcript", min_chars=100, max_chars=200, 
+                            shared_output_path="combined_youtube_rag.jsonl", seen_chunks_global=None):
     os.makedirs(output_dir, exist_ok=True)
     audio_path = None
     transcript_path = None
@@ -264,7 +265,10 @@ def process_youtube_video(video_url, output_dir="/data/transcript", min_chars=10
         # Chunk + deduplicate
         chunks = chunk_with_similarity(cleaned, min_chars, max_chars)
         chunks = [utils.deduplicate_within_chunk(c) for c in chunks]
-        chunks = list({utils.fully_normalize_text(c): c for c in chunks}.values())
+        
+        # Global deduplication
+        if seen_chunks_global is not None:
+            chunks = utils.global_deduplicate_chunks(chunks, seen_chunks_global)
 
         # Save chunks
         append_chunks_to_shared_jsonl(
