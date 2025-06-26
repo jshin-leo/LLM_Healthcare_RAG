@@ -1,7 +1,6 @@
 # LLM for Healthcare (RAG)
 This project implements a local Retrieval-Augmented Generation (RAG) pipeline tailored for healthcare content. It extracts transcripts from YouTube videos and web articles, filters sensitive medical statements, chunks the content, builds a FAISS vector store, and enables local question answering using a fine-tuned Mistral 7B model.
-![AI_Chatbot](https://github.com/user-attachments/assets/289d921c-cfe1-4f82-9ebf-63a1f373d2ce)
-
+![AI_Chatbot](https://github.com/user-attachments/assets/6e0e811c-1375-49d8-a523-77981b051aa5)
 
 ## Features
 - YouTube crawling
@@ -40,8 +39,11 @@ python main.py retrieve --query "What are signs of dementia?"
 python main.py rag --query "How to manage memory loss?" --top_k 5
 ```
 
-## ⚠️Responsible Use
+### ⚠️Responsible Use
 This tool is intended for educational and research purposes only. Use ethically and responsibly. Please ensure that you:
 - Use publicly available, non-restricted content.
 - Respect copyright and privacy laws.
 - Do not use this tool to scrape or redistribute copyrighted, sensitive, or private content without proper authorization.
+
+### Attribution
+- Icons used in the diagram are sourced from [Flaticon](https://www.flaticon.com/)
