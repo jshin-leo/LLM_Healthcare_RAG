@@ -26,7 +26,25 @@ mistral_pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 def transcript_to_raw_blocks(text):
     return [sent.text.strip() for sent in utils.NLP(text).sents if sent.text.strip()]
 
-def similarity_guided_chunking(raw_blocks, min_chars=300, max_chars=500, similarity_threshold=0.75):
+def clean_raw_blocks(blocks, min_chars=50):
+    """
+    Filter out overly short, non-informative, or noisy sentences.
+    """
+    cleaned = []
+    for line in blocks:
+        if len(line) < min_chars:
+            continue
+        if re.search(r"(http[s]?://|www\.)", line):  # remove links
+            continue
+        if re.fullmatch(r"[\W\d\s]+", line):  # symbols, numbers only
+            continue
+        if line.lower().startswith(("call", "click", "visit", "donate", "learn more", "800", "1-800")):
+            continue
+        cleaned.append(line)
+    return cleaned
+
+
+def similarity_guided_chunking(raw_blocks, min_chars=100, max_chars=200, similarity_threshold=0.75):
     embeddings = model_lm.encode(raw_blocks, convert_to_tensor=True)
     chunks, current = [], raw_blocks[0]
     current_len = len(current)
@@ -60,20 +78,23 @@ def save_chunks_to_jsonl(chunks, title, url, output_path):
             }
             f.write(json.dumps(record) + "\n")
 
-# === Main callable function ===
-def process_content_file(filepath, combined_output, min_chars=100, max_chars=200, similarity_threshold=0.75):
+# === Main callable method ===
+def process_content_file(filepath, combined_output, seen_chunks_global=None, min_chars=100, max_chars=200, similarity_threshold=0.75):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             full_text = f.read()
 
         title = utils.fully_normalize_text(os.path.basename(filepath))
         url, content = utils.extract_url_content(full_text)
-        content = utils.fully_normalize_text(content)
-        raw_blocks = transcript_to_raw_blocks(content)
+        raw_blocks = transcript_to_raw_blocks(content)  # preserves sentence structure
+        filtered_blocks = clean_raw_blocks(raw_blocks)
 
-        chunks = similarity_guided_chunking(raw_blocks, min_chars, max_chars, similarity_threshold)
-        chunks = [utils.deduplicate_within_chunk(c) for c in chunks]
-        chunks = list({utils.fully_normalize_text(c): c for c in chunks}.values())  # Deduplicate chunks
+        chunks = similarity_guided_chunking(filtered_blocks, min_chars, max_chars, similarity_threshold)
+        chunks = [utils.deduplicate_within_chunk(c) for c in chunks] # Deduplicate chunks
+        
+        # Global deduplication
+        if seen_chunks_global is not None:
+            chunks = utils.global_deduplicate_chunks(chunks, seen_chunks_global)
 
         save_chunks_to_jsonl(chunks, title, url, combined_output)
 
