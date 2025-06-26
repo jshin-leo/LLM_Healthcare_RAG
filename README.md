@@ -2,7 +2,7 @@
 This project implements a local Retrieval-Augmented Generation (RAG) pipeline tailored for healthcare content, with a focus on Alzheimer’s disease, related dementias (ADRD), and caregiving. It extracts transcripts from YouTube videos and web articles, filters sensitive medical statements, chunks the content, builds a FAISS vector store, and enables local question answering using a fine-tuned Mistral 7B model.
   
 **Official project**: https://github.com/LeonG19/llm-healthcare  
-This work is currently in progress as part of the Security and Intelligence Lab at UTEP.  
+This work is currently in progress as part of the **Security and Intelligence Lab** at **UTEP**, under the supervision of Dr. Piplai.  
 
 ## My Contribution 
 This GitHub repository serves as a personal implementation to deepen my understanding of Retrieval-Augmented Generation (RAG) pipelines. I independently developed most components as a standalone project, including YouTube crawling, transcription and chunking, content filtering, FAISS-based semantic search, the RAG pipeline, and overall system integration.  
