@@ -1,4 +1,4 @@
-# LLM for Healthcare (RAG)
+# Domain-Aware Question Answering for Alzheimer’s Care using RAG and Fine-Tuned Mistral 7B
 This project implements a local Retrieval-Augmented Generation (RAG) pipeline tailored for healthcare content, with a focus on Alzheimer’s disease, related dementias (ADRD), and caregiving. It extracts transcripts from YouTube videos and web articles, filters sensitive medical statements, chunks the content, builds a FAISS vector store, and enables local question answering using a fine-tuned Mistral 7B model.
   
 **Official project**: https://github.com/LeonG19/llm-healthcare  
