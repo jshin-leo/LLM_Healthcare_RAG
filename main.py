@@ -5,6 +5,9 @@
 #   - Author: Jihoon Shin
 #   - Date: June 6th, 2025
 #   - Purpose: Full RAG pipeline 
+'''
+    
+'''
 # ---------------------------------------------------------------------
 import os
 # Silence tensorflow logs
@@ -37,6 +40,8 @@ CHUNKS_DIR = utils.CHUNKS_DIR
 
 # Files from utils.py
 YOUTUBE_LINKS_FILE = utils.YOUTUBE_LINKS_FILE
+YOUTUBE_LINKS_EXTRACTED_FROM_PLAYLIST = utils.YOUTUBE_LINKS_EXTRACTED_FROM_PLAYLIST
+YOUTUBE_PLAYLIST = utils.YOUTUBE_PLAYLIST
 COMBINED_YOUTUBE_OUTPUT_FILE = utils.COMBINED_YOUTUBE_OUTPUT_FILE
 COMBINED_WEBSITE_OUTPUT_FILE = utils.COMBINED_WEBSITE_OUTPUT_FILE
 INDEX_FILE = utils.INDEX_FILE
@@ -60,6 +65,28 @@ def run_youtube_pipeline(do_crawl):
 
     print(f"Found {len(youtube_links)} YouTube link(s) to process.")
     
+    seen_chunks_global = set()  # shared (for global deduplication)
+
+    for link in youtube_links:
+        chunker_youtube.process_youtube_video(
+            link,
+            output_dir=YOUTUBE_OUTPUT_DIR,
+            shared_output_path=COMBINED_YOUTUBE_OUTPUT_FILE,
+            seen_chunks_global=seen_chunks_global
+        )
+
+# === YouTube: Extract links from playlists + Chunking Process ===
+def run_youtube_playlist():
+    print("\n--- Running YouTube Playlist Pipeline ---")
+
+    # Extract links from playlist
+    youtube_scraper.extract_playlist_links(YOUTUBE_PLAYLIST, YOUTUBE_LINKS_EXTRACTED_FROM_PLAYLIST)
+
+    with open(YOUTUBE_LINKS_EXTRACTED_FROM_PLAYLIST, "r", encoding="utf-8") as f:
+        youtube_links = [line.strip() for line in f if line.strip()]
+
+    print(f"Found {len(youtube_links)} YouTube link(s) to process.")
+
     seen_chunks_global = set()  # shared (for global deduplication)
 
     for link in youtube_links:
@@ -99,15 +126,33 @@ def run_retrieve_pipeline(args):
     for i, r in enumerate(results, 1):
         print(f"[{i}] Title: {r.get('title', '-')}\n    URL: {r.get('url', '-')}\n    Score (distance): {r['score']:.4f}\n    Chunk: {r['chunk'][:500]}...\n")
 
+def print_usage():
+    print("Usage:")
+    print(f"  python main.py youtube [Y/N/playlist]   # Run YouTube chunking pipeline (Y: re-crawl, N: use cached, playlist: extract from {YOUTUBE_PLAYLIST})")
+    print("  python main.py website # Run website content chunking")
+    print("  python main.py index   # Build FAISS vector index")
+    print("  python main.py retrieve --query 'your question'  # semantic search")
+    print("  python main.py rag --query 'your question' [--top_k N] [--max_tokens N]  # Full RAG pipeline with Mistral")
+
+
 # === MAIN ENTRY ===
 if __name__ == "__main__":
     print("===== LLM for Healthcare Pipeline =====")
     
     if len(sys.argv) > 1:
-        
         if sys.argv[1] == "youtube":    # Run YouTube pipeline
-            do_crawl = sys.argv[2].lower() == "y" if len(sys.argv) > 2 else False   # crawling option
-            run_youtube_pipeline(do_crawl)
+            if len(sys.argv) > 2:
+                if sys.argv[2].lower() == 'playlist':
+                    run_youtube_playlist()
+                else: 
+                    if sys.argv[2].lower() == 'y':
+                        do_crawl = True
+                    else:
+                        do_crawl = False
+                    run_youtube_pipeline(do_crawl) 
+            else:
+                print("Unknown command.")
+                print_usage()
 
         elif sys.argv[1] == "website":  # Run website content chunking
             run_website_pipeline()
@@ -118,6 +163,7 @@ if __name__ == "__main__":
                 index_file=INDEX_FILE,
                 metadata_file=METADATA_FILE
             )
+
         elif sys.argv[1] == "retrieve":  # Perform semantic search using the FAISS index
             parser = argparse.ArgumentParser()
             parser.add_argument("--query", type=str, required=True)
@@ -143,14 +189,9 @@ if __name__ == "__main__":
 
         else:
             print("Unknown command.")
-            pass
+            print_usage()
     
     else:
-        print("Usage:")
-        print("  python main.py youtube [Y/N]   # Run YouTube chunking pipeline (Y: re-crawl, N: use cached)")
-        print("  python main.py website # Run website content chunking")
-        print("  python main.py index   # Build FAISS vector index")
-        print("  python main.py retrieve --query 'your question'  # semantic search")
-        print("  python main.py rag --query 'your question' [--top_k N] [--max_tokens N]  # Full RAG pipeline with Mistral")
-    
+        print_usage()
+
     print("\n===== Done. =====")
